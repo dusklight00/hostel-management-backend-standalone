@@ -10,6 +10,7 @@ const {
   findStudent,
   setSessionID,
   resetSessionID,
+  findStudentBySessionID,
 } = require("./database");
 const { generateUUID } = require("./utils");
 
@@ -39,6 +40,40 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+
+app.get("/get_usn_id_from_session_id", async (req, res) => {
+  const sessionID = req.query.sessionID;
+
+  if (sessionID == null) {
+    res.send({
+      status: "field_missing",
+      message: "sessionID is missing.",
+    });
+    return false;
+  }
+
+  if (sessionID == "") {
+    res.send({
+      status: "empty_field",
+      message: "sessionID can not be empty",
+    });
+    return false;
+  }
+
+  const student = await findStudentBySessionID(sessionID);
+  if (student == null) {
+    res.send({
+      status: "student_not_found",
+      message: "Student is not found",
+    });
+    return false;
+  }
+
+  res.send({
+    status: "student_found",
+    usnID: student.usnID
+  });
+})
 
 app.get("/register_new_student", async (req, res) => {
   const name = req.query.name;
@@ -173,13 +208,13 @@ app.get("/login", async (req, res) => {
   }
 
   const student = await findStudent(usnID);
-  if (student == null) {
-    res.send({
-      status: "user_not_found",
-      message: "No user exists with this usnID",
-    });
-    return false;
-  }
+  // if (student == null) {
+  //   res.send({
+  //     status: "user_not_found",
+  //     message: "No user exists with this usnID",
+  //   });
+  //   return false;
+  // }
 
   const actualPassword = student.password;
   // if (student.sessionID !== null) {
